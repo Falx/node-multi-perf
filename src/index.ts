@@ -8,7 +8,6 @@ const port = 3000;
 
 const shortHandler = new ShortTaskHttpHandler();
 const longHandler = new LongTaskHttpHandler();
-let counter = 0;
 
 const server = createServer(async (request: IncomingMessage, response: ServerResponse) => {
     if (request.url?.startsWith('/short')) {
