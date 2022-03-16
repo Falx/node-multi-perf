@@ -1,4 +1,16 @@
-function sum (num1:number, num2:number){
-    return num1 + num2;
-}
-console.log(sum(8,4))
+import { IncomingMessage, ServerResponse } from "http";
+
+const http = require('http');
+
+const hostname = '127.0.0.1';
+const port = 3000;
+
+const server = http.createServer((req: IncomingMessage, res: ServerResponse) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('Hello World');
+});
+
+server.listen(port, hostname, () => {
+  console.log(`Server running at http://${hostname}:${port}/`);
+});
