@@ -1,0 +1,33 @@
+{
+  "name": "node-multi-perf",
+  "version": "1.0.0",
+  "description": "Nodejs multithreaded perfornamce testing of HTTP server",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node ./src/index.ts",
+    "dev": "ts-node-dev --respawn ./src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Falx/node-multi-perf.git"
+  },
+  "keywords": [
+    "node",
+    "multithreading",
+    "performance",
+    "perf"
+  ],
+  "author": "thomas.dupont@ugent.be",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Falx/node-multi-perf/issues"
+  },
+  "homepage": "https://github.com/Falx/node-multi-perf#readme",
+  "devDependencies": {
+    "@types/node": "^17.0.21",
+    "ts-node": "^10.7.0",
+    "ts-node-dev": "^1.1.8",
+    "typescript": "^4.6.2"
+  }
+}
