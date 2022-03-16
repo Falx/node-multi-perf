@@ -1,0 +1,27 @@
+config:
+  target: "http://127.0.0.1:3000"
+  phases:
+    - duration: 10
+      arrivalRate: 1
+      maxVusers: 10
+    - duration: 20
+      arrivalRate: 5
+      rampTo: 50
+    - duration: 10
+      arrivalRate: 50
+      maxVusers: 50
+scenarios:
+  - name: Short response
+    weight: 1
+    flow:
+      - get:
+          url: "/short"
+  - name: Long response
+    weight: 1
+    flow:
+      - get:
+          url: "/long"
+          qs:
+            total: 100000
+
+      

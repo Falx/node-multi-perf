@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node ./src/index.ts",
+    "build": "tsc",
     "dev": "ts-node-dev --respawn ./src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "benchmark": "artillery run test.yaml -o reports/benchmark.json && artillery report reports/benchmark.json"
   },
   "repository": {
     "type": "git",
