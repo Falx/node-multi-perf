@@ -12,12 +12,12 @@ config:
       maxVusers: 50
 scenarios:
   - name: Short response
-    weight: 1
+    weight: 95
     flow:
       - get:
           url: "/short"
   - name: Long response
-    weight: 1
+    weight: 5
     flow:
       - get:
           url: "/long"
