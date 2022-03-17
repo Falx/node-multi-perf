@@ -1,3 +1,4 @@
+import { Config } from "../Config";
 import { Offloader } from "../Offloader";
 import { HttpHandler, HttpHandlerInput } from "./HttpHandler";
 
@@ -18,21 +19,25 @@ export class LongTaskHttpHandler extends HttpHandler {
         const params = new URLSearchParams(search![1]);
         const total = parseInt(params.get("total") ?? `${DEFAULT_SIZE}`);
 
-        const series = generateTimeSeries(total);
-        // const series = await Offloader.offload(generateTimeSeries, [total]);
+        let series;
+        if (Config.areWorkersEnabled()) {
+            series = await Offloader.offload(generateTimeSeries, [total]);
+        } else {
+            series = generateTimeSeries(total);
+        }
 
         response.statusCode = 200;
         response.setHeader('Content-Type', 'application/json');
-        response.end(JSON.stringify(series));
+        response.end(series);
 
         return Promise.resolve();
     }
 }
 
-function generateTimeSeries(total: number): [number,number][] {
-    const series = [] as [number,number][];
+function generateTimeSeries(total: number): string {
+    const series = [] as [number, number][];
     for (let i = 0; i < total; i++) {
-        series.push([Date.now(), i+Math.round(Math.random()*20)]);
+        series.push([Date.now(), i + Math.round(Math.random() * 20)]);
     }
-    return series;
+    return JSON.stringify(series);
 }

@@ -7,9 +7,9 @@ config:
     - duration: 20
       arrivalRate: 5
       rampTo: 50
-    - duration: 10
+    - duration: 20
       arrivalRate: 50
-      maxVusers: 50
+      maxVusers: 250
 scenarios:
   - name: Short response
     weight: 95
@@ -22,6 +22,6 @@ scenarios:
       - get:
           url: "/long"
           qs:
-            total: 100000
+            total: 500000
 
       

@@ -87,5 +87,8 @@ typings/
 # DynamoDB Local files
 .dynamodb/
 
-# Dist fiolder
+# Dist folder
 dist/
+
+# reports folder
+reports/
