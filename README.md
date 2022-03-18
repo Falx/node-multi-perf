@@ -1,6 +1,6 @@
 # Node multithreading performance test
 
-This is a small project to measure the influence of using various "multi-threading" methods on a nodejs project.
+This is a small project to measure the influence of using various "multi-threading" methods on a nodejs project with the [CSS](https://github.com/CommunitySolidServer/CommunitySolidServer) in mind.
 ## Installation
 
 ```bash
@@ -9,19 +9,25 @@ npm i
 ```
 
 This will generate two files:
-* `/reports/benchmark.json`: Raw results
-* `/reports/benchmark.json.html`: HTML report of results
+
+path | description
+---  | -----
+`/reports/benchmark.json`| Raw results
+`/reports/benchmark.json.html`| HTML report of results
 
 ## The application
 
-The application is a simple Nodejs HTTP server with two endpoints:
+The application is a simple Nodejs HTTP server with three endpoints:
 
- * `/short`: prints hello world
- * `/long?total=xxx`: generates a timeseries formatted as a JSON Array with random values.
+endpoints | description
+----------| -----------
+`/short` | prints hello world.
+`/long?total=xxx` |  generates a timeseries formatted as a JSON Array with random values.
+ `/config` |  prints if workers are enabled.
 
  ## Tests
  
- A scenario has been written using Artillery, it can be found int [test.yaml](test.yaml). Artillery creates virtual users that call target URLs. The scenario goes like this:
+ A scenario has been written using Artillery, it can be found in [test.yaml](test.yaml). Artillery creates virtual users that call target URLs. The scenario goes like this:
 
  * For 10 seconds:
     * Increase virtual users with 1/sec.
@@ -37,7 +43,7 @@ While doing this, there is a 95% chance the short request is taken and a 5% chan
 
  ### Baseline
 
-These are the results of the test with the server running as is.
+This is the application running as is.
 
 ```bash
 # Start the server in 1 terminal
@@ -48,6 +54,11 @@ npm run benchmark
 cp reports/benchmark.json results/baseline.json
 cp reports/benchmark.json.html results/baseline.json.html
 ```
+
+**Resuls**
+
+   * results/baseline.json
+   * results/baseline.json.html
 
 ### Cluster approach
 
