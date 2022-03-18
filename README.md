@@ -111,8 +111,8 @@ path | link
 
 ## Combined results
 
-![](results/http_response.png)
-![](results/user_session.png)
+![](docs/http_response.png)
+![](docs/user_session.png)
 
 ## Discussion
 
