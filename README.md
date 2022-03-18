@@ -122,11 +122,11 @@ Looking a these results the clustering approach seems an obvious win. However so
 
 The concept of clustering in nodejs is interesting, it allows for an easy way of utilizing more cpu threads/cores. All of this with minimal changes to the code. In essence, one instance is the Main instance, and child processes are forked from that process. They each run the complete runtime of nodejs, but can listen to the same port.
 
-This leads to the main drawback, since every process runs the entire nodejs stack, the RAM requirements are pretty high. Essentially you are trading memory for cpu. 
+This leads to the main drawback, since every process runs the entire nodejs stack, the RAM requirements are pretty high. Essentially you are sacrificing memory to be able to use more cpu time. 
 
 **About worker_threads**
 
-The concept of worker_threads in nodejs allows for lightweight _application_ (read: not the same as OS threads, this is still at the discretion of the OS thread scheduler) threads to be run in parallel. In theory this is an ideal solution, it does not require extra RAM for running the nodejs stack and it allows the main event loop to never be blocked or stalled!
+The concept of worker_threads in nodejs allows for lightweight _application_ (read: not the same as OS threads, this is still at the discretion of the OS thread scheduler) threads to be run in parallel. In theory this is an ideal solution: it avoids the high RAM overhead of running additional nodejs stacks and allows the main event loop to never be blocked or stalled.
 
 The initial reaction was to try out two approaches for the CSS:
 
@@ -146,6 +146,8 @@ Mapping this to the cases above, this means:
    1. In the CSS this is not feasable as a simple change. All the current Handlers have a `request: IncomingMessage` and `response: ServerResponse` object as argument. This can never work, since both objects (particularly the reponse object) are serialized and copied. This means the response object is not the same one connected to the initial opened Socket and thus never responds. To make this work the Handler interface should include a method signatures like this: `handle(request: IncomingMessage): String`. The response would then be returned as the string that will be sent to the original ServerResponse object (in the main thread).
 
       In case of the CSS this is a very large and deep change, which I feel is not warranted. Even more so, because already it is clear that a lot of overhead time would be spent serializing input data to the workers. (see also "Important to note" under next point)
+
+      _If we want to be able to return chunked responses, the handler should be able to partition itself in manageable sizes (read: of O(1) complexity if possible) and reschedule the next piece on a worker. This would be even harder to implement in a generic way._
 
    2. This approach is a bit more feasable, because the programmer can decide whether to use the worker pool or not. It could allow for interesting gains if there are tasks that require a lot of calculation, but not a lot of serialization (i.e. input arguments are small).
 
