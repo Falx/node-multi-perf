@@ -55,10 +55,10 @@ cp reports/benchmark.json results/baseline.json
 cp reports/benchmark.json.html results/baseline.json.html
 ```
 
-**Resuls**
-
-   * results/baseline.json
-   * results/baseline.json.html
+path | link
+-----|-----
+`docs/baseline.json.html` | [HTML Report](https://falx.github.io/node-multi-perf/baseline.json.html)
+`docs/baseline.json` | [Raw JSON](https://falx.github.io/node-multi-perf/baseline.json)
 
 ### Cluster approach
 
@@ -75,6 +75,11 @@ npm run build
 pm2 start dist/index.js -i "-1"
 ```
 
+path | link
+-----|-----
+`docs/cluster.json.html` | [HTML Report](https://falx.github.io/node-multi-perf/cluster.json.html)
+`docs/cluster.json` | [Raw JSON](https://falx.github.io/node-multi-perf/cluster.json)
+
 ### Worker_thread approach
 
 Using [workerpool](https://www.npmjs.com/package/workerpool) we will now start the application and create a worker_thread pool. This pool will only be used for executing the timeseries generation of the `/long` endpoints.
@@ -84,6 +89,13 @@ Using [workerpool](https://www.npmjs.com/package/workerpool) we will now start t
 npm start -- --workers
 ```
 
+_Note: this can be further optimized by partitionig the long running task (see [Discussion](#discussion))_
+
+path | link
+-----|-----
+`docs/workers.json.html` | [HTML Report](https://falx.github.io/node-multi-perf/workers.json.html)
+`docs/workers.json` | [Raw JSON](https://falx.github.io/node-multi-perf/workers.json)
+
 ### Cluster + worker_thread approach
 
 Combining both techniques at the same time
@@ -92,7 +104,12 @@ Combining both techniques at the same time
 pm2 start dist/index.js -i -1 -- --workers
 ```
 
-## Test results
+path | link
+-----|-----
+`docs/cluster-worker.json.html` | [HTML Report](https://falx.github.io/node-multi-perf/cluster-worker.json.html)
+`docs/cluster-worker.json` | [Raw JSON](https://falx.github.io/node-multi-perf/cluster-worker.json)
+
+## Combined results
 
 ![](results/http_response.png)
 ![](results/user_session.png)
@@ -103,37 +120,38 @@ Looking a these results the clustering approach seems an obvious win. However so
 
 **About clustering**
 
-The concept of clustering in nodejs is interesting, it allows for an easy way of utilizing more cpu threads/cores. All of this with minimal changes to the code. In essence, one instance is the Main instance, and child processes are forked from that process. They each run the complete runtime of nodejs, but for intance can listen to the same port.
+The concept of clustering in nodejs is interesting, it allows for an easy way of utilizing more cpu threads/cores. All of this with minimal changes to the code. In essence, one instance is the Main instance, and child processes are forked from that process. They each run the complete runtime of nodejs, but can listen to the same port.
 
 This leads to the main drawback, since every process runs the entire nodejs stack, the RAM requirements are pretty high. Essentially you are trading memory for cpu. 
 
 **About worker_threads**
 
-The concept of worker_threads in nodejs allows for lightweight _application_ (read: not the same as OS threads, this is still at the discretion of the OS thread scheduler) threads to be run in parallel. In theory this is an ideal case, it does not require extra RAM for running the nodejs stack and it allows the main event loop to never be blocked or stalled. 
+The concept of worker_threads in nodejs allows for lightweight _application_ (read: not the same as OS threads, this is still at the discretion of the OS thread scheduler) threads to be run in parallel. In theory this is an ideal solution, it does not require extra RAM for running the nodejs stack and it allows the main event loop to never be blocked or stalled!
 
 The initial reaction was to try out two approaches for the CSS:
 
-   1. Accept incoming requests on the main thread, and immediatly dispatch calculcating the respone to a workers_thread. Once the response is available, the main thread gets called and responds to the original requset.
+   1. Accept incoming requests on the main thread, and immediatly dispatch calculcating the respone to a workers_thread. Once the response is available, the main thread gets called and responds to the original request.
    2. Make a worker_thread pool that can be leveraged for long running tasks (i.e. the programmer knows this is going to be long running, thus uses the worker_thread pool).
 
 In practice however there are some major drawbacks with both these scenarios. Data going to and from workers_threads needs to be serialized. This effectively means:
 
    * Arguments are always serialized and thus copied.
-   * Complex arguments need to be serializable
-   * Dynamically calling functions (not knwon which ones beforehand, like nr 1. above) requires serializing the whole function to send it to the worker.
+   * Complex arguments need to be serializable.
+   * Dynamically calling functions (eg. when not known which functions will be called beforehand, like in approach 1 above) requires serializing the whole function to send it to the worker.
    * Function return values follow the same requirements (serialized/serializable/copied)
-   * Functions must completely rely on their own scope and variables. They cannot be dependent on outer scoped variables.
+   * Functions must completely rely on their own scope and variables. They cannot be dependent on outer scoped variables (a worker cannot see the main thread).
 
 Mapping this to the cases above, this means:
 
-   1. In the CSS this is not feasable as a simple change. All the current Handlers have a `request: IncomingMessage` and `response: ServerResponse` object as argument. This can never work, since both objects (particularly the reponse object) are serialized and copied. This means the response object is not the same one connected to the initial opened Socket and thus never responds. To make this work the Handler interface should include method signatures like this: `handle(request: IncomingMessage): String`. The response would then be returned as the string that will be send to the original ServerResponse object (in the main thread).
+   1. In the CSS this is not feasable as a simple change. All the current Handlers have a `request: IncomingMessage` and `response: ServerResponse` object as argument. This can never work, since both objects (particularly the reponse object) are serialized and copied. This means the response object is not the same one connected to the initial opened Socket and thus never responds. To make this work the Handler interface should include a method signatures like this: `handle(request: IncomingMessage): String`. The response would then be returned as the string that will be sent to the original ServerResponse object (in the main thread).
 
-      In case of the CSS this is a very large and deep change, which I feel is not warranted. Even more so, because already it is clear that a lot of overhead time would be spent serializing input data to the workers.
+      In case of the CSS this is a very large and deep change, which I feel is not warranted. Even more so, because already it is clear that a lot of overhead time would be spent serializing input data to the workers. (see also "Important to note" under next point)
+
    2. This approach is a bit more feasable, because the programmer can decide whether to use the worker pool or not. It could allow for interesting gains if there are tasks that require a lot of calculation, but not a lot of serialization (i.e. input arguments are small).
 
-      Another way to look at this is that you don't really care if the serialization makes it take longer to respond, because instead the main eventloop is freed up from any cpu-intesive tasks it had to perform. 
+      (Another way to look at this is that you don't really care if the serialization makes it take longer to respond, because instead you get the benefit of the main eventloop being freed up from any cpu-intesive task it had to perform.)
 
-      Important to not here is that even if offloaded to a worker pool, programmers should still be wary of partitioning their workload. [[1](https://nodejs.org/en/docs/guides/dont-block-the-event-loop/#partitioning)] [[2](https://nodejs.org/en/docs/guides/dont-block-the-event-loop/#task-partitioning)]
+      **Important to note** here is that even if offloaded to a worker pool, programmers should still be wary of partitioning their workload. [[1](https://nodejs.org/en/docs/guides/dont-block-the-event-loop/#partitioning)] [[2](https://nodejs.org/en/docs/guides/dont-block-the-event-loop/#task-partitioning)]
 
 ## Conclusion
 
